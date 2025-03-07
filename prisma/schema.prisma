@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String?
+  avatar        String?
+  role          Role
+  chatHistories ChatHistory[]
+  files         File[]
+}
+
+model Subject {
+  id                String      @id @default(cuid())
+  code              String      @unique
+  name              String
+  department        String
+  regulation        Int
+  aggregatedContent String
+  embeddings        Embedding[]
+  files             File[]
+}
+
+model File {
+  id         String   @id @default(cuid())
+  filePath   String
+  subjectId  String
+  uploaderId String
+  uploadedAt DateTime @default(now())
+  subject    Subject  @relation(fields: [subjectId], references: [id])
+  uploader   User     @relation(fields: [uploaderId], references: [id])
+}
+
+model Embedding {
+  id        Int     @id @default(autoincrement())
+  subjectId String
+  chunkId   Int
+  text      String
+  vector    Float[]
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([subjectId, chunkId], map: "unique_subject_chunk")
+  @@index([subjectId, chunkId])
+}
+
+model ChatHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  subjectCode String
+  message     String
+  response    String
+  timestamp   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
