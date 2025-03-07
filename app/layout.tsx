@@ -16,11 +16,6 @@ export default function RootLayout({
 
   return (
     <html lang="en" className="h-full">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#000000" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-      </head>
       <body className={`${lexend.className} bg-stone-950 h-full`}>
         <Providers>
           {children}

@@ -16,6 +16,7 @@ model User {
   role          Role
   chatHistories ChatHistory[]
   files         File[]
+  savedResponses SavedResponse[]
 }
 
 model Subject {
@@ -27,6 +28,8 @@ model Subject {
   aggregatedContent String
   embeddings        Embedding[]
   files             File[]
+  createdAt         DateTime    @default(now())
+  savedResponses    SavedResponse[]
 }
 
 model File {
@@ -35,7 +38,7 @@ model File {
   subjectId  String
   uploaderId String
   uploadedAt DateTime @default(now())
-  subject    Subject  @relation(fields: [subjectId], references: [id])
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   uploader   User     @relation(fields: [uploaderId], references: [id])
 }
 
@@ -45,7 +48,7 @@ model Embedding {
   chunkId   Int
   text      String
   vector    Float[]
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([subjectId, chunkId], map: "unique_subject_chunk")
   @@index([subjectId, chunkId])
@@ -59,6 +62,16 @@ model ChatHistory {
   response    String
   timestamp   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id])
+}
+
+model SavedResponse {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  userId    String
+  subjectId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 }
 
 enum Role {

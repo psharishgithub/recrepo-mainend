@@ -70,10 +70,11 @@ export const Sidenav: React.FC<SidenavProps> = ({ openSideNav, setOpenSideNav })
             section: "Admin Tools",
             show: isAdmin,
             items: [
+                
                 {
                     title: "Admin Utility",
                     icon: <PenTool className="h-4 w-4" />,
-                    path: "/admin/utility",
+                    path: "/admin",
                     show: true
                 }
             ]
@@ -85,7 +86,7 @@ export const Sidenav: React.FC<SidenavProps> = ({ openSideNav, setOpenSideNav })
                 {
                     title: "Teacher Utility",
                     icon: <Wrench className="h-4 w-4" />,
-                    path: "/teacher/utility",
+                    path: "/teacher",
                     show: true
                 }
             ]

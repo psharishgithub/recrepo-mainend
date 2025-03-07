@@ -10,7 +10,7 @@ interface SubjectTileProps {
 
 export default function SubjectTile({ name, code, regulation }: SubjectTileProps) {
   return (
-    <Link href={`/landing/subject/${code}`} passHref>
+    <Link href={`/subject/${code}`} passHref>
       <Card className="bg-stone-900 border-transparent h-full w-full min-h-[220px] rounded-[20px] transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-white/10 hover:border-2 hover:border-white/50 flex flex-col">
         <CardHeader className="flex-grow">
           <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold line-clamp-3">

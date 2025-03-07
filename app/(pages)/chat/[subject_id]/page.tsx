@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from 'next-auth/react';
+import { BookmarkPlus, Bookmark } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ChatPage() {
   const { subject_id } = useParams();
@@ -20,6 +23,8 @@ export default function ChatPage() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { data: session } = useSession();
+  const [savedResponses, setSavedResponses] = useState<number[]>([]);
 
   useEffect(() => {
     if (typeof subject_id === 'string') {
@@ -39,6 +44,15 @@ export default function ChatPage() {
     setIsLoading(true);
     const newUserMessage = { id: Date.now(), text: inputMessage, sender: 'user' };
     setMessages(prevMessages => [...prevMessages, newUserMessage]);
+    
+    // Add a temporary bot message that will be updated with streaming content
+    const botMessageId = Date.now() + 1;
+    setMessages(prevMessages => [...prevMessages, { 
+      id: botMessageId, 
+      text: '', 
+      sender: 'bot' 
+    }]);
+
     const currentInputMessage = inputMessage;
     setInputMessage('');
 
@@ -54,22 +68,83 @@ export default function ChatPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.body) {
+        throw new Error('No response body');
       }
 
-      const data = await response.json();
-      const botResponse = { id: Date.now(), text: data.answer, sender: 'bot' };
-      setMessages(prevMessages => [...prevMessages, botResponse]);
+      const reader = response.body.getReader();
+      let accumulatedText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Convert the chunk to text
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split('\n').filter(line => line.trim());
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            
+            if (data.error) {
+              throw new Error(data.error);
+            }
+
+            if (data.content) {
+              accumulatedText += data.content;
+              // Update the last bot message with accumulated text
+              setMessages(prevMessages => 
+                prevMessages.map(msg => 
+                  msg.id === botMessageId 
+                    ? { ...msg, text: accumulatedText }
+                    : msg
+                )
+              );
+            }
+          } catch (e) {
+            console.error('Error parsing chunk:', e);
+          }
+        }
+      }
+
     } catch (error) {
-      const errorMessage = { 
-        id: Date.now(), 
-        text: 'Sorry, I encountered an error. Please try again.', 
-        sender: 'bot' 
-      };
-      setMessages(prevMessages => [...prevMessages, errorMessage]);
+      console.error('Error:', error);
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === botMessageId 
+            ? { ...msg, text: 'Sorry, I encountered an error. Please try again.' }
+            : msg
+        )
+      );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveResponse = async (messageId: number, content: string) => {
+    if (!session?.user) return;
+
+    try {
+      const response = await fetch('/api/responses/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          userId: session.user.id,
+          subjectId,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save response');
+
+      setSavedResponses(prev => [...prev, messageId]);
+      toast.success('Response saved successfully');
+    } catch (error) {
+      console.error('Error saving response:', error);
+      toast.error('Failed to save response');
     }
   };
 
@@ -91,7 +166,7 @@ export default function ChatPage() {
         <div className="px-4 sm:px-6 py-4">
           <div className="flex items-center gap-4">
             <Link 
-              href="/landing/library" 
+              href="/library" 
               className="hover:opacity-75 transition-opacity focus:outline-none focus:ring-2 focus:ring-white/20 rounded-full p-1"
             >
               <ArrowLeft className="h-5 w-5 text-stone-400" />
@@ -118,7 +193,7 @@ export default function ChatPage() {
               >
                 <div
                   className={`
-                    max-w-[75%] rounded-2xl px-4 py-3
+                    relative max-w-[75%] rounded-2xl px-4 py-3
                     ${message.sender === 'bot'
                       ? 'bg-stone-800 text-left rounded-bl-sm'
                       : 'bg-stone-700 text-left rounded-br-sm'
@@ -132,6 +207,21 @@ export default function ChatPage() {
                   >
                     {message.text}
                   </ReactMarkdown>
+                  {message.sender === 'bot' && message.text && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8 hover:bg-stone-700/50"
+                      onClick={() => handleSaveResponse(message.id, message.text)}
+                      disabled={savedResponses.includes(message.id)}
+                    >
+                      {savedResponses.includes(message.id) ? (
+                        <Bookmark className="h-4 w-4 text-primary" />
+                      ) : (
+                        <BookmarkPlus className="h-4 w-4 text-stone-400" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             ))}

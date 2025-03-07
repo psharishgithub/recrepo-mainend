@@ -14,6 +14,7 @@ type Subject = {
   name: string;
   department: string;
   regulation: number;
+  files: any[]; // Add files array to type
 };
 
 export default function LibraryPage() {
@@ -33,11 +34,14 @@ export default function LibraryPage() {
   useEffect(() => {
     async function fetchSubjects() {
       try {
-        const response = await fetch('/api/subjects', { cache: 'no-cache' });
+        const response = await fetch('/api/subjects?includeFiles=true', { cache: 'no-cache' });
         if (response.ok) {
           const data = await response.json();
-          console.log(data);
-          setSubjects(data);
+          // Only include subjects that have files
+          const subjectsWithFiles = (data.subjects || []).filter(
+            (subject: Subject) => subject.files && subject.files.length > 0
+          );
+          setSubjects(subjectsWithFiles);
         } else {
           console.error('Failed to fetch subjects');
           setError('Failed to fetch subjects');

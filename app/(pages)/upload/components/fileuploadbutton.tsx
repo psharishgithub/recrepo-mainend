@@ -2,10 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FaPlus, FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileImage, FaTrashAlt } from 'react-icons/fa';
 import Image from 'next/image';
 
-export default function FileUploadButton({ onFilesChange, onClearFiles }: {
+interface FileUploadButtonProps {
   onFilesChange: (files: File[]) => void;
   onClearFiles: () => void;
-}) {
+  disabled?: boolean;  // Make it optional with ?
+}
+
+export default function FileUploadButton({ onFilesChange, onClearFiles, disabled }: FileUploadButtonProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,6 +87,7 @@ export default function FileUploadButton({ onFilesChange, onClearFiles }: {
           multiple
           onChange={handleFileChange}
           className="hidden"
+          disabled={disabled}
         />
       </label>
       {error && <p className="text-red-600 mb-4">{error}</p>}
