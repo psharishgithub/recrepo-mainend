@@ -17,6 +17,13 @@ interface Subject {
   regulation: number;
 }
 
+interface SubjectResponse {
+  subjects: Subject[];
+  total: number;
+}
+
+export const dynamic = 'force-dynamic'
+
 export default function SubjectList() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -30,23 +37,23 @@ export default function SubjectList() {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/subjects?page=${pageNum}&limit=${ITEMS_PER_PAGE}&search=${encodeURIComponent(search)}`
+        `/api/teacher/subjects?page=${pageNum}&limit=${ITEMS_PER_PAGE}&search=${encodeURIComponent(search)}`
       );
-      if (!response.ok) throw new Error('Failed to fetch subjects');
-      const data = await response.json();
-      
+      if (!response.ok) {
+        throw new Error('Failed to fetch subjects');
+      }
+      const data: SubjectResponse = await response.json();
       setSubjects(data.subjects);
       setTotalPages(Math.ceil(data.total / ITEMS_PER_PAGE));
       setError(null);
     } catch (err) {
-      setError('Error loading subjects');
       console.error(err);
+      setError('Error loading subjects');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); 
 
-  // Debounced search function
   const debouncedSearch = useCallback(
     debounce((search: string) => {
       setPage(1);
@@ -69,7 +76,7 @@ export default function SubjectList() {
     setSearchQuery(e.target.value);
   };
 
-  const handleDelete = async (code: string) => {
+  const handleDelete = useCallback(async (code: string) => {
     if (!confirm('Are you sure you want to delete this subject? This will also delete all associated files and data.')) {
       return;
     }
@@ -84,14 +91,13 @@ export default function SubjectList() {
         throw new Error(data.message || 'Failed to delete subject');
       }
 
-      // Remove the deleted subject from state
-      setSubjects(subjects.filter(subject => subject.code !== code));
-      setError(null); // Clear any existing errors
+      setSubjects(prev => prev.filter(subject => subject.code !== code));
+      setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to delete subject');
       console.error(err);
     }
-  };
+  }, []);
 
   if (loading && page === 1) return <LoadingSpinner />;
   if (error) return <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>;

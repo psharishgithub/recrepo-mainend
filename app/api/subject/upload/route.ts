@@ -8,9 +8,7 @@ import axios from 'axios';
 
 const prisma = new PrismaClient();
 
-const processEndpoint = (process.env.NODE_ENV === 'production' 
-  ? process.env.PROD_PROCESS_ENDPOINT 
-  : process.env.DEV_PROCESS_ENDPOINT) || 'defaultProcessEndpoint';
+const processEndpoint = "http://localhost:8000/process";
 
 async function sendToProcessEndpoint(subjectId: string, subjectCode: string, filePaths: string[], userId: string) {
   try {
@@ -42,7 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'No files uploaded' });
     }
 
-    const tempDir = process.env.NODE_ENV === 'production' ? '/tmp' : 'C:\\Users\\Harish\\AppData\\Local\\Temp';
+    const tempDir = 'C:\\Users\\Harish\\AppData\\Local\\Temp';
 
     const filePaths = await Promise.all(files.map(async (file) => {
       const bytes = await file.arrayBuffer();

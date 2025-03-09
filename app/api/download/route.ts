@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import fs from 'fs/promises';
 import { authOptions } from '@/app/api/auth/[...nextauth]/authoptions';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
