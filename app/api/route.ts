@@ -31,7 +31,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(user);
   } catch (error) {
-   
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
     if (error instanceof Error) {
       if (error.message.includes('P2002')) { 
         console.error('Unique constraint failed:', error);

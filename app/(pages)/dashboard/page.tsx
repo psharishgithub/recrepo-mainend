@@ -75,13 +75,7 @@ export default function LandingPage() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
             >
-                <HomeClient />
-                {savedResponses.length > 0 && (
-                    <SavedResponsesTile 
-                        responses={savedResponses} 
-                        onDelete={handleDelete}
-                    />
-                )}
+                <HomeClient responses={savedResponses} onDelete={handleDelete} />
             </motion.div>
         )
     }
